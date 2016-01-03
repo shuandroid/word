@@ -2,8 +2,6 @@ package com.chen.drawerexample;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -23,7 +21,6 @@ import java.util.ArrayList;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.PopupWindow;
 import android.widget.SearchView;
@@ -35,7 +32,6 @@ import com.chen.drawerexample.utils.WordModel;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 
 public class MainActivity extends AppCompatActivity
@@ -56,7 +52,8 @@ public class MainActivity extends AppCompatActivity
 
     private ArrayList<WordModel> wordModels;
 
-    protected TextView mResult;
+    protected TextView mPopResult;
+    protected TextView mPopWordName;
 
 
     @Bind(R.id.toolbar)
@@ -68,23 +65,16 @@ public class MainActivity extends AppCompatActivity
     @Bind(R.id.word_list)
     protected ListView mWordList;
 
-//    @Bind(R.id.result)
-//    protected TextView mResult;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setupContentView();
-
         setToolbar();
         setupDrawerLayout();
-
         setupView();
-
         initPopupWindow();
         initData();
-
-
     }
 
     private void setupDrawerLayout() {
@@ -132,14 +122,16 @@ public class MainActivity extends AppCompatActivity
         mWordList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                 showPop(view);
-                mResult.setText("Translation:" + translations.get(position) + "\n\n"
-                        + "Phonetic:" + phonetic.get(position) + "\n\n");
+                initDataForPop(position);
+
             }
         });
 
 
         mSearchView.setIconifiedByDefault(false);
+        mSearchView.setFocusable(false);
         mSearchView.setSubmitButtonEnabled(true);
         mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -228,17 +220,26 @@ public class MainActivity extends AppCompatActivity
 
         popupWindow.setAnimationStyle(R.style.PopupWindow);
 
-        mResult = (TextView) popView.findViewById(R.id.result);
+        mPopResult = (TextView) popView.findViewById(R.id.result);
+        mPopWordName = (TextView) popView.findViewById(R.id.text);
 
     }
 
 
     private void showPop(View view) {
 
-        popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
+        popupWindow.showAtLocation(view, Gravity.CENTER,  0, 0);
         popupWindow.setFocusable(true);
         popupWindow.setOutsideTouchable(true);
         popupWindow.update();
+
+    }
+
+    private void initDataForPop(int position) {
+
+        mPopWordName.setText(words.get(position));
+        mPopResult.setText(phonetic.get(position) + "\n\n" + translations.get(position) + "\n\n");
+
 
     }
 

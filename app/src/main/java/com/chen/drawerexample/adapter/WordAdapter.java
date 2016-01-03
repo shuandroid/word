@@ -9,12 +9,7 @@ import android.widget.TextView;
 
 import com.chen.drawerexample.R;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
-
-import butterknife.Bind;
-import butterknife.ButterKnife;
 
 /**
  * Created by chen
@@ -65,19 +60,16 @@ public class WordAdapter extends BaseAdapter {
         }
 
         viewHolder.mWordName.setText(name.get(position));
-//        viewHolder.mWordTag.setText(tags.get(position));
 
         return convertView;
     }
 
     private class ViewHolder{
 
-//        TextView mWordTag;
 
         TextView mWordName;
 
         public ViewHolder (View view) {
-//            mWordTag = (TextView) view.findViewById(R.id.word_tag);
             mWordName = (TextView) view.findViewById(R.id.word_name);
         }
 
