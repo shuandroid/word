@@ -33,12 +33,34 @@ public class Analyze implements WordParser {
                     if (parser.getName().equals("item")) {
                         model = new WordModel();
                     } else if (parser.getName().equals("word")) {
-
+                        eventType = parser.next();
+                        assert model != null;
+                        model.setWord(parser.getText());
+                    } else if (parser.getName().equals("trans")) {
+                        eventType = parser.next();
+                        assert model != null;
+                        model.setTranslation(parser.getText());
+                    } else if (parser.getName().equals("phonetic")) {
+                        eventType = parser.next();
+                        assert model != null;
+                        model.setPhonetic(parser.getText());
+                    } else if (parser.getName().equals("tags")) {
+                        eventType = parser.next();
+                        assert model != null;
+                        model.setTags(parser.getText());
                     }
+                    break;
+                case XmlPullParser.END_TAG:
+                    if (parser.getName().equals("item")) {
+                        models.add(model);
+                        model = null;
+                    }
+                    break;
             }
+            eventType = parser.next();
         }
 
-        return null;
+        return models;
     }
 
     @Override

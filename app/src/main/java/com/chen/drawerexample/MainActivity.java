@@ -1,8 +1,12 @@
 package com.chen.drawerexample;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.text.TextUtils;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -13,40 +17,59 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
 
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.View.OnClickListener;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.PopupWindow;
+import android.widget.SearchView;
 import android.widget.TextView;
 
-import com.chen.drawerexample.adapter.DictionaryAdapter;
+import com.chen.drawerexample.adapter.WordAdapter;
+import com.chen.drawerexample.utils.Analyze;
+import com.chen.drawerexample.utils.WordModel;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, OnClickListener, TextWatcher {
+        implements NavigationView.OnNavigationItemSelectedListener, OnClickListener {
 
 
-    protected Toolbar toolbar;
+    private PopupWindow popupWindow;
+    private View popView;
+    LayoutInflater inflater = null;
 
-    private final String DATABASE_PATH = android.os.Environment
-            .getExternalStorageDirectory().getAbsolutePath()
-            + "/dictionary";
+    private ArrayList<String> words = new ArrayList<>();
 
-    private AutoCompleteTextView word;
+    private ArrayList<String> tags = new ArrayList<>();
 
-    private final String DATABASE_FILENAME = "dictionary.db";
-    private SQLiteDatabase database;
+    private ArrayList<String> translations = new ArrayList<>();
 
-    private Button searchWord;
+    private ArrayList<String> phonetic = new ArrayList<>();
 
-    private TextView showResult;
+    private ArrayList<WordModel> wordModels;
+
+    protected TextView mResult;
+
+
+    @Bind(R.id.toolbar)
+    protected Toolbar mToolbar;
+
+    @Bind(R.id.search_view)
+    protected SearchView mSearchView;
+
+    @Bind(R.id.word_list)
+    protected ListView mWordList;
+
+//    @Bind(R.id.result)
+//    protected TextView mResult;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -55,9 +78,11 @@ public class MainActivity extends AppCompatActivity
 
         setToolbar();
         setupDrawerLayout();
-        initData();
 
         setupView();
+
+        initPopupWindow();
+        initData();
 
 
     }
@@ -65,31 +90,15 @@ public class MainActivity extends AppCompatActivity
     private void setupDrawerLayout() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string
+                this, drawer, mToolbar, R.string.navigation_drawer_open, R.string
                 .navigation_drawer_close);
         drawer.setDrawerListener(toggle);
         toggle.syncState();
     }
 
     private void setupView() {
-        searchWord = (Button) findViewById(R.id.searchWord);
-        word = (AutoCompleteTextView) findViewById(R.id.word);
-        //绑定监听器
-        searchWord.setOnClickListener(this);
-        //绑定文字改变监听器
-        word.addTextChangedListener(this);
-        showResult = (TextView) findViewById(R.id.result);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_SHORT)
-                        .setAction("Action", null).show();
-            }
-        });
-
-
+        ButterKnife.bind(this);
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
@@ -97,13 +106,104 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void initData() {
-        //打开数据库
-        database = openDatabase();
+
+
+        try {
+            InputStream inputStream = getAssets().open("cet4.xml");
+            Analyze analyze = new Analyze();
+            wordModels = (ArrayList<WordModel>) analyze.parse(inputStream);
+            for (WordModel model : wordModels) {
+                words.add(model.getWord());
+                tags.add(model.getTags());
+                translations.add(model.getTranslation());
+                phonetic.add(model.getPhonetic());
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        WordAdapter adapter = new WordAdapter(this, words, tags);
+
+        mWordList.setAdapter(adapter);
+        mWordList.setTextFilterEnabled(true);
+
+        mWordList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                showPop(view);
+                mResult.setText("Translation:" + translations.get(position) + "\n\n"
+                        + "Phonetic:" + phonetic.get(position) + "\n\n");
+            }
+        });
+
+
+        mSearchView.setIconifiedByDefault(false);
+        mSearchView.setSubmitButtonEnabled(true);
+        mSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+
+                if (!TextUtils.isEmpty(query)) {
+                    words.clear();
+                    tags.clear();
+                    phonetic.clear();
+                    translations.clear();
+                    for (WordModel mModel : wordModels) {
+                        if (mModel.getWord().equals(query)) {
+                            words.add(mModel.getWord());
+                            tags.add(mModel.getTags());
+                            translations.add(mModel.getTranslation());
+                            phonetic.add(mModel.getPhonetic());
+                        }
+                    }
+                    mWordList.setAdapter(new WordAdapter(MainActivity.this, words, tags));
+                }
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+
+
+                if (TextUtils.isEmpty(newText)) {
+                    words.clear();
+                    tags.clear();
+                    phonetic.clear();
+                    translations.clear();
+                    for (WordModel mModel : wordModels) {
+                        words.add(mModel.getWord());
+                        tags.add(mModel.getTags());
+                        translations.add(mModel.getTranslation());
+                        phonetic.add(mModel.getPhonetic());
+                    }
+                    mWordList.setAdapter(new WordAdapter(MainActivity.this, words, tags));
+                }
+                if (!TextUtils.isEmpty(newText)) {
+                    words.clear();
+                    tags.clear();
+                    phonetic.clear();
+                    translations.clear();
+                    for (WordModel mModel : wordModels) {
+                        if (mModel.getWord().compareTo(newText) >= 0) {
+                            words.add(mModel.getWord());
+                            tags.add(mModel.getTags());
+                            translations.add(mModel.getTranslation());
+                            phonetic.add(mModel.getPhonetic());
+                        }
+                    }
+                    mWordList.setAdapter(new WordAdapter(MainActivity.this, words, tags));
+                }
+                return true;
+            }
+        });
+
     }
 
     private void setToolbar() {
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
     }
 
     private void setupContentView() {
@@ -111,88 +211,39 @@ public class MainActivity extends AppCompatActivity
     }
 
 
-
-    public void afterTextChanged(Editable s) {
-        //  必须将english字段的别名设为_id
-        Cursor cursor = database.rawQuery(
-                "select english as _id from t_words where english like ?",
-                new String[]
-                        {s.toString() + "%"});
-        //新建新的Adapter
-        DictionaryAdapter dictionaryAdapter = new DictionaryAdapter(this,
-                cursor, true);
-        //绑定适配器
-        word.setAdapter(dictionaryAdapter);
-
-    }
-
-
-    public void beforeTextChanged(CharSequence s, int start, int count,
-                                  int after) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-        // TODO Auto-generated method stub
-
-    }
-
     public void onClick(View view) {
-        //查询指定的单词
-        String sql = "select chinese from t_words where english=?";
-        Cursor cursor = database.rawQuery(sql, new String[]
-                {word.getText().toString()});
-        String result = "未找到该单词.";
-        //  如果查找单词，显示其中文的意思
-        if (cursor.getCount() > 0) {
-            //  必须使用moveToFirst方法将记录指针移动到第1条记录的位置
-            cursor.moveToFirst();
-            result = cursor.getString(cursor.getColumnIndex("chinese")).replace("&amp;", "&");
-        }
-        //将结果显示到TextView中
-        showResult.setText(word.getText() + "\n" + result.toString());
+
     }
 
-    private SQLiteDatabase openDatabase() {
+    public void initPopupWindow() {
 
-        try {
-            // 获得dictionary.db文件的绝对路径
-            String databaseFilename = DATABASE_PATH + "/" + DATABASE_FILENAME;
-            File dir = new File(DATABASE_PATH);
-            // 如果/sdcard/dictionary目录中存在，创建这个目录
-            if (!dir.exists()) {
-                dir.mkdir();
-            }
-
-
-            // 如果在/sdcard/dictionary目录中不存在
-            // dictionary.db文件，则从res\raw目录中复制这个文件到
-            // SD卡的目录（/sdcard/dictionary）
-
-            if (!(new File(databaseFilename)).exists()) {
-                // 获得封装dictionary.db文件的InputStream对象
-                InputStream is = getResources().openRawResource(
-                        R.raw.dictionary);
-                FileOutputStream fos = new FileOutputStream(databaseFilename);
-                byte[] buffer = new byte[8192];
-                int count = 0;
-                // 开始复制dictionary.db文件
-                while ((count = is.read(buffer)) > 0) {
-                    fos.write(buffer, 0, count);
-                }
-                //关闭文件流
-                fos.close();
-                is.close();
-            }
-            // 打开/sdcard/dictionary目录中的dictionary.db文件
-            SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(
-                    databaseFilename, null);
-            return database;
-        } catch (Exception e) {
+        inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        if (popupWindow != null && popupWindow.isShowing()) {
+            return;
         }
+        popView = inflater.inflate(R.layout.result_pop, null);
+        popupWindow = new PopupWindow(popView,
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
 
-        return null;
+        popupWindow.setAnimationStyle(R.style.PopupWindow);
+
+        mResult = (TextView) popView.findViewById(R.id.result);
+
+    }
+
+
+    private void showPop(View view) {
+
+        popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
+        popupWindow.setFocusable(true);
+        popupWindow.setOutsideTouchable(true);
+        popupWindow.update();
+
+    }
+
+    private void hidePopupWindow() {
+        popupWindow.dismiss();
     }
 
     @Override
@@ -200,6 +251,8 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
+        } else if (popupWindow != null && popupWindow.isShowing()) {
+            hidePopupWindow();
         } else {
             super.onBackPressed();
         }
@@ -207,16 +260,13 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
@@ -251,7 +301,6 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
 
 
 }

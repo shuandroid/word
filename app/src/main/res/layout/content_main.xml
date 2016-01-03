@@ -14,43 +14,43 @@
     tools:context=".MainActivity"
     tools:showIn="@layout/app_bar_main">
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/search"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <AutoCompleteTextView
-            android:id="@+id/word"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_toLeftOf="@+id/searchWord"
-            android:ems="20"
-            android:singleLine="true">
-
-            <requestFocus/>
-        </AutoCompleteTextView>
-
-        <Button
-            android:id="@+id/searchWord"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentTop="true"
-            android:text="@string/search_word"/>
-    </RelativeLayout>
-
-    <TextView
-        android:id="@+id/textView1"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/search_lable"/>
+        android:background="@drawable/background_shadow"
+        android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/result"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0.68"
-        android:background="@color/white"
-        android:textColor="@color/blue"/>
+        <SearchView
+            android:id="@+id/search_view"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white"
+            android:queryHint="查找"/>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="30dp"/>
+
+        <ListView
+            android:id="@+id/word_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/white"
+            />
+    </LinearLayout>
+
+    <!--<TextView-->
+    <!--android:id="@+id/textView1"-->
+    <!--android:layout_width="wrap_content"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:text="@string/search_result"/>-->
+
+    <!--<TextView-->
+    <!--android:id="@+id/result"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="wrap_content"-->
+    <!--android:layout_weight="0.68"-->
+    <!--android:background="@color/white"-->
+    <!--android:textColor="@color/blue"/>-->
 </LinearLayout>

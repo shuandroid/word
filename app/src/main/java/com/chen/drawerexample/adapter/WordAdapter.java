@@ -1,5 +1,6 @@
 package com.chen.drawerexample.adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +30,11 @@ public class WordAdapter extends BaseAdapter {
 
     private ArrayList<String> tags;
 
+    public WordAdapter(Context context, ArrayList<String> name, ArrayList<String> tags) {
+        mLayoutInflater = LayoutInflater.from(context);
+        this.name = name;
+        this.tags = tags;
+    }
 
     @Override
     public int getCount() {
@@ -59,22 +65,20 @@ public class WordAdapter extends BaseAdapter {
         }
 
         viewHolder.mWordName.setText(name.get(position));
-        viewHolder.mWordTag.setText(tags.get(position));
+//        viewHolder.mWordTag.setText(tags.get(position));
 
         return convertView;
     }
 
     private class ViewHolder{
 
-        @Bind(R.id.word_name)
+//        TextView mWordTag;
+
         TextView mWordName;
 
-        @Bind(R.id.word_tag)
-        TextView mWordTag;
-
         public ViewHolder (View view) {
-            ButterKnife.bind(this, view);
-
+//            mWordTag = (TextView) view.findViewById(R.id.word_tag);
+            mWordName = (TextView) view.findViewById(R.id.word_name);
         }
 
     }
