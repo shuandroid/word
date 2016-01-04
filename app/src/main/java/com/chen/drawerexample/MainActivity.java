@@ -1,6 +1,8 @@
 package com.chen.drawerexample;
 
 import android.content.Context;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.PaintDrawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.Gravity;
@@ -228,9 +230,11 @@ public class MainActivity extends AppCompatActivity
 
     private void showPop(View view) {
 
-        popupWindow.showAtLocation(view, Gravity.CENTER,  0, 0);
+
+        popupWindow.setBackgroundDrawable(new PaintDrawable());
         popupWindow.setFocusable(true);
         popupWindow.setOutsideTouchable(true);
+        popupWindow.showAtLocation(view, Gravity.CENTER, 0, 0);
         popupWindow.update();
 
     }
